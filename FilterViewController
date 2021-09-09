@@ -1,0 +1,88 @@
+//
+//  FilterViewController.swift
+//  Blockat
+//
+//  Created by Ahmed Allam on 09/09/2021.
+//
+
+import UIKit
+
+protocol FilterViewProtocol {
+    associatedtype T
+    var searchTextField: UITextField! { get set }
+    var isSearchBarActive: Bool { get set }
+    var fullData: [T] { get set }
+    var filteredData: [T] { get set }
+    func reloadData()
+    func filterLogic(searchText: String) -> [T]
+}
+
+class FilterViewController<Model: Any>: UIViewController, UITextFieldDelegate, FilterViewProtocol{
+    typealias T = Model
+    weak var searchTextField: UITextField!
+    var isSearchBarActive: Bool = false
+    var fullData: [Model] = []
+    var filteredData: [Model] = []
+    
+    func reloadData() {
+        fatalError("Must Override")
+    }
+    
+    func filterLogic(searchText: String) -> [Model] {
+        fatalError("Must Override")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        searchTextField.delegate = self
+    }
+    
+    func numerOfItems() -> Int{
+        return isSearchBarActive ? filteredData.count : fullData.count
+    }
+    
+    func selectedItem(at index: Int) -> T{
+        return isSearchBarActive ? filteredData[index] : fullData[index]
+    }
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        let isDeleteChar = string.isEmpty
+        let isLastChar = range.location == 0
+        if textField == searchTextField{
+            if isLastChar && isDeleteChar{
+                filteredData = []
+                isSearchBarActive = false
+                reloadData()
+            }else{
+                isSearchBarActive = true
+                filteredData = filterLogic(searchText: (textField.text! + string))
+                reloadData()
+            }
+        }
+        return true
+    }
+    
+    func textFieldShouldClear(_ textField: UITextField) -> Bool {
+        if textField == searchTextField{
+            filteredData = []
+            isSearchBarActive = false
+            reloadData()
+        }
+        return true
+    }
+    
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        if textField == searchTextField{
+            guard textField.text!.count > 1  else {
+                return false
+            }
+            isSearchBarActive = true
+            filteredData = filterLogic(searchText: textField.text ?? "")
+            reloadData()
+            return true
+        }
+        return true
+    }
+}
